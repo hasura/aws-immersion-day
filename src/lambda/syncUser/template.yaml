@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 5
+
+Resources:
+  syncUserFunction:
+    Properties:
+      Architectures:
+        - x86_64
+      CodeUri: source/
+      Environment:
+        Variables:
+          HASURA_ADMIN_SECRET: <insert>
+          HASURA_GRAPHQL_API: <insert>
+      Handler: app.lambdaHandler
+      PackageType: Zip
+      Runtime: nodejs18.x
+    Type: AWS::Serverless::Function
