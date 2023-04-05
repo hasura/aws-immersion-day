@@ -41,6 +41,16 @@ CREATE TABLE credit_product_applications (
 );
 ```
 
+Insert data:
+
+```sql
+INSERT INTO credit_products (annual_fee, interest_rate) VALUES (0.00, 15.99);
+INSERT INTO credit_products (annual_fee, interest_rate) VALUES (99.00, 18.99);
+INSERT INTO credit_products (annual_fee, interest_rate) VALUES (59.00, 12.99);
+INSERT INTO credit_products (annual_fee, interest_rate) VALUES (29.00, 21.99);
+INSERT INTO credit_products (annual_fee, interest_rate) VALUES (149.00, 14.99);
+```
+
 ## Adding Remote Schemas
 
 Now that we've added a product to our mobile banking offering, we want to bring in our CMS data. Since we are a cutting edge bank, of course our CMS is headless and offers a GraphQL API.
