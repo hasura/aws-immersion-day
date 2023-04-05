@@ -12,8 +12,6 @@
 
 ## Getting Started
 
-You'll find this repo located at the following link:
-
 This repository is broken into the following sub-sections:
 
 ### Guide

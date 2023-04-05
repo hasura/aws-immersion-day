@@ -6,6 +6,8 @@ You need to provision two key parts of the infrastructure. An AWS ecosystem of f
 
 To set up your AWS accounts, you need to go to the following link.
 
+![The rough architectural diagram of what we are building today.](/guide/assets/aws-arch.png)
+
 ### Magic strings to write down:
 
 RDS Host 1 (RdsEndpoint):

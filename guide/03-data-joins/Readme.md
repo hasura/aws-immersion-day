@@ -1,5 +1,7 @@
 # Look at the data sources
 
+![Here's our primary erd chart.](/guide/assets/er-diagram.png)
+
 ## Database 1
 
 Our primary transactional database lives in RDS.
