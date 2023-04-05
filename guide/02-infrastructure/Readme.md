@@ -6,6 +6,8 @@ You need to provision two key parts of the infrastructure. An AWS ecosystem of f
 
 To set up your AWS accounts, you need to go to the following link.
 
+https://dashboard.eventengine.run/login?hash=2f14-130f27bc34-b3
+
 Steps:
 
 1. Update username and password

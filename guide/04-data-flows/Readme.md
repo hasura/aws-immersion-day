@@ -13,13 +13,27 @@ Create a series of action called Signup and we'll use this URL
 ### Type Definition
 
 ```graphql
+type Mutation {
+  login(username: String!, password: String!): TokenOutput
+}
+```
 
+### Body Transform
+
+```json
+{
+  "username": {{$body.input.username}},
+  "password": {{$body.input.password}}
+}
 ```
 
 ### Types
 
 ```graphql
-
+type TokenOutput {
+  id_token: String!
+  access_token: String!
+}
 ```
 
 ## Signup
@@ -29,28 +43,55 @@ Create a series of action called Signup and we'll use this URL
 ### Type Definition
 
 ```graphql
-
+type Mutation {
+  """
+  signup
+  """
+  signup(
+    username: String!
+    password: String!
+    email: String!
+    first_name: String!
+    last_name: String!
+  ): json
+}
 ```
 
-### Types
+### Body Transform
 
-```graphql
-
+```json
+{
+    "username": {{$body.input.username}},
+    "password": {{$body.input.password}},
+    "email": {{$body.input.email}},
+    "first_name": {{$body.input.first_name}},
+    "last_name": {{$body.input.last_name}},
+    "phone_number": "5555"
+}
 ```
 
 ## Verify
 
-`{{AWS_LAMBDA_HOST}}/api/v1/auth/verify`
+`{{AWS_LAMBDA_HOST}}/api/v1/auth/signup/confirm`
 
 ### Type Definition
 
 ```graphql
-
+type Mutation {
+  """
+  Signup Confirm
+  """
+  signupConfirm(code: String!, username: String!): json
+}
 ```
 
-### Types
+### body
 
-```graphql
+```json
+{
+    "username": {{$body.input.username}},
+    "code": {{$body.input.code}}
+}
 
 ```
 
