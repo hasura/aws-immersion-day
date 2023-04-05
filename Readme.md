@@ -26,4 +26,4 @@ Any code needed for steps in the actual workshop will be included in the guide.
 
 Note: There will be a few things for you to write down and remember when setting up your infrastructure, you are encouraged to fork this repository and edit the document as we go to rememeber your magic strings!
 
-## [Get Started](./guide/01-introduction/Readme.md)
+## [Get Started](/guide/01-introduction/Readme.md)

@@ -35,4 +35,4 @@ We'll be adding support for our new product offering, applying for credit produc
 
 With all of this data, we'll be able to look at some interesting business use-cases for working with this data and learn about more Hasura features along the way.
 
-But first, we need to [set up our infrastructure](../02-infrastructure/Readme.md)
+But first, we need to [set up our infrastructure](/guide/02-infrastructure/Readme.md)
