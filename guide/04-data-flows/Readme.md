@@ -6,14 +6,80 @@ Actions are exposed as root level queries or mutations in the GraphQL API. Event
 
 Create a series of action called Signup and we'll use this URL
 
-{{AWS_LAMBDA_HOST}}/api/v1/auth/login
-{{AWS_LAMBDA_HOST}}/api/v1/auth/signup
-{{AWS_LAMBDA_HOST}}/api/v1/auth/verify
-{{AWS_LAMBDA_HOST}}/api/v1/auth/signout
+## Login
+
+`{{AWS_LAMBDA_HOST}}/api/v1/auth/login`
+
+### Type Definition
+
+```graphql
+
+```
+
+### Types
+
+```graphql
+
+```
+
+## Signup
+
+`{{AWS_LAMBDA_HOST}}/api/v1/auth/signup`
+
+### Type Definition
+
+```graphql
+
+```
+
+### Types
+
+```graphql
+
+```
+
+## Verify
+
+`{{AWS_LAMBDA_HOST}}/api/v1/auth/verify`
+
+### Type Definition
+
+```graphql
+
+```
+
+### Types
+
+```graphql
+
+```
+
+## Signout
+
+`{{AWS_LAMBDA_HOST}}/api/v1/auth/signout`
+
+### Type Definition
+
+```graphql
+
+```
+
+### Types
+
+```graphql
+
+```
 
 ## Add Event Triggers
 
-Create an event trigger for inserts on the table User. Use this URL {{EVENT_TRIGGER_BASE}}/<YOUR_MAGIC_NAMESPACE>
+Create an event trigger for inserts on the table User. Use this URL:  
+`{{EVENT_TRIGGER_BASE}}/<YOUR_MAGIC_NAMESPACE>`
+
+Post transform
+
+```json
+{"body": {{$body}}}
+```
 
 Navigate to this endpoint
 https://cloud.hasura.io/public/graphiql?endpoint=https://echo-server.hasura.app/v1/graphql

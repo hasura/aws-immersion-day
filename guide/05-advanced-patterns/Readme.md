@@ -10,4 +10,14 @@ CREATE TABLE admin (
 );
 ```
 
-## Simple interface example
+## Order Products
+
+#### Mutation
+
+```graphql
+mutation ApplyForCreditCard {
+  insert_credit_product_applications_one(object: { credit_product_id: 1 }) {
+    id
+  }
+}
+```

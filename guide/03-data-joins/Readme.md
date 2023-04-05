@@ -24,8 +24,8 @@ Beyond this basic data model, we're going to add support for selling Credit Card
 
 ```sql
 CREATE TABLE c_application_status_enum (
-  value VARCHAR(255) NOT NULL PRIMARY KEY,
-  description VARCHAR(255)
+  value text NOT NULL PRIMARY KEY,
+  description text
 );
 
 CREATE TABLE credit_products (
@@ -38,20 +38,28 @@ CREATE TABLE credit_product_applications (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(user_id),
   credit_product_id INTEGER NOT NULL REFERENCES credit_products(id),
-  date_applied DATE NOT NULL,
-  status VARCHAR(255) NOT NULL REFERENCES c_application_status_enum(value)
+  date_applied DATE NOT NULL DEFAULT now(),
+  status text NOT NULL REFERENCES c_application_status_enum(value) DEFAULT 'PENDING'
 );
 ```
 
 Insert data:
 
 ```sql
+INSERT INTO c_application_status_enum (value, description) VALUES ('PENDING', 'The application is pending review.');
+INSERT INTO c_application_status_enum (value, description) VALUES ('APPROVED', 'The application has been approved.');
+INSERT INTO c_application_status_enum (value, description) VALUES ('DENIED', 'The application has been denied.');
 INSERT INTO credit_products (annual_fee, interest_rate) VALUES (0.00, 15.99);
 INSERT INTO credit_products (annual_fee, interest_rate) VALUES (99.00, 18.99);
 INSERT INTO credit_products (annual_fee, interest_rate) VALUES (59.00, 12.99);
 INSERT INTO credit_products (annual_fee, interest_rate) VALUES (29.00, 21.99);
 INSERT INTO credit_products (annual_fee, interest_rate) VALUES (149.00, 14.99);
 ```
+
+### Steps
+
+1. Configure Status as an Enum
+2. Set default values for x-hasura-user-id on insert permissions
 
 ## Adding Remote Schemas
 
