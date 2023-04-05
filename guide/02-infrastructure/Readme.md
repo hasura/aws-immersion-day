@@ -38,3 +38,5 @@ EVENT_TRIGGER_BASE: https://echo-server.hasura.app/api/rest/postify
 ### Dashboard run through
 
 ### Console run through
+
+## Now it's time to [connect all the pieces](/guide/03-data-joins/Readme.md)

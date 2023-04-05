@@ -9,3 +9,5 @@ CREATE TABLE admin (
   id INTEGER PRIMARY KEY
 );
 ```
+
+## Simple interface example

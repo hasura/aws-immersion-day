@@ -31,3 +31,5 @@ subscription {
   }
 }
 ```
+
+## [Mooar](/guide/05-advanced-patterns/Readme.md)

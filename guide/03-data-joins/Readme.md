@@ -60,3 +60,5 @@ We're going to add this remote schema.
 https://us-east-1-shared-usea1-02.cdn.hygraph.com/content/clg39oqud10xw01szfm8m5wln/master
 
 You'll need to provide a namespace for remote schemas.
+
+## Ready, and [Actions!](/guide/04-data-flows/Readme.md)
