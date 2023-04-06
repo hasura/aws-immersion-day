@@ -6,13 +6,76 @@
 
 Our primary transactional database lives in RDS.
 
-## Databse 2
+Steps:
+
+1. Discuss the magic.
+2. Look at how Hasura operates.
+3. Look at the analyze tab.
+4. Apply permissions with predicate pushdown
+
+## How Hasura works
+
+```mermaid
+graph TD;
+    GraphQLDocument -->|Sent to Hasura| Metadata;
+    Metadata -->|Compiled with rules| SQLQuery;
+    SQLQuery -->|Executed against database| Result;
+```
+
+---
+
+## Typical GraphQL Server
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant GraphQLServer
+    participant Resolver
+    participant Database
+
+    Client->>GraphQLServer: Requests records that it owns
+    GraphQLServer->>Resolver: Asks resolver to fetch records
+    Resolver->>Database: Asks database for records
+    Database-->>Resolver: Sends back 10 records
+    Resolver->>GraphQLServer: Sends results to server
+    GraphQLServer->>Client: Filters results and sends one record back
+
+```
+
+---
+
+## Hasura GraphQL
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Hasura
+    participant Database
+
+    Client->>Hasura: Requests records that it owns
+    Hasura->>Database: Compiles GraphQL to SQL and requests just Client records
+    Database-->>Hasura: Sends back records
+    Hasura-->>Client: Sends records back to client
+
+```
+
+---
+
+## Database 2
 
 Our credit report data from the big three.
 
 ## Database 3
 
-Static file processing with Athena.
+Our Crypto DB.
+
+## Database 4
+
+Static file processing with Athena statements.
+
+Steps:
+
+1. Namespace the statements field
 
 ## Connecting the data sources
 
@@ -59,7 +122,6 @@ INSERT INTO credit_products (annual_fee, interest_rate) VALUES (149.00, 14.99);
 ### Steps
 
 1. Configure Status as an Enum
-2. Set default values for x-hasura-user-id on insert permissions
 
 ## Adding Remote Schemas
 

@@ -8,22 +8,13 @@ Create a series of action called Signup and we'll use this URL
 
 ## Login
 
-`{{AWS_LAMBDA_HOST}}/api/v1/auth/login`
+`{{LAMBDA_URL}}/api/v1/auth/login`
 
 ### Type Definition
 
 ```graphql
 type Mutation {
   login(username: String!, password: String!): TokenOutput
-}
-```
-
-### Body Transform
-
-```json
-{
-  "username": {{$body.input.username}},
-  "password": {{$body.input.password}}
 }
 ```
 
@@ -36,17 +27,23 @@ type TokenOutput {
 }
 ```
 
+### Body Transform
+
+```json
+{
+  "username": {{$body.input.username}},
+  "password": {{$body.input.password}}
+}
+```
+
 ## Signup
 
-`{{AWS_LAMBDA_HOST}}/api/v1/auth/signup`
+`{{LAMBDA_URL}}/api/v1/auth/signup`
 
 ### Type Definition
 
 ```graphql
 type Mutation {
-  """
-  signup
-  """
   signup(
     username: String!
     password: String!
@@ -72,7 +69,7 @@ type Mutation {
 
 ## Verify
 
-`{{AWS_LAMBDA_HOST}}/api/v1/auth/signup/confirm`
+`{{LAMBDA_URL}}/api/v1/auth/signup/confirm`
 
 ### Type Definition
 
@@ -95,22 +92,6 @@ type Mutation {
 
 ```
 
-## Signout
-
-`{{AWS_LAMBDA_HOST}}/api/v1/auth/signout`
-
-### Type Definition
-
-```graphql
-
-```
-
-### Types
-
-```graphql
-
-```
-
 ## Add Event Triggers
 
 Create an event trigger for inserts on the table User. Use this URL:  
@@ -122,21 +103,15 @@ Post transform
 {"body": {{$body}}}
 ```
 
-Navigate to this endpoint
-https://cloud.hasura.io/public/graphiql?endpoint=https://echo-server.hasura.app/v1/graphql
+Browser to https://postify-theta.vercel.app/<YOUR_NAMESPACE>
 
-Use this query to subscribe to events. Change the channel to your own channel.
+---
 
-```graphql
-subscription {
-  posts_stream(
-    cursor: { initial_value: { created_at: "2023-04-05 05:09:34.151181+00" } }
-    batch_size: 10
-  ) {
-    channel
-    payload
-  }
-}
-```
+## Add Permissions
+
+1. User Role
+2. Anonymous Role
+3. Decode JWT tokens
+4. Default values
 
 ## [Mooar](/guide/05-advanced-patterns/Readme.md)
