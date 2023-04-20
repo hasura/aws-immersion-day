@@ -266,27 +266,27 @@ CREATE TABLE transactions (
     CHECK ((wallet_id) > 0)
 );
 
-INSERT INTO users (username, first_name, last_name, created, updated) VALUES
-  ('tommy.callahan', 'Tommy', 'Callahan', '2023-01-02 10:00:00.00', '2022-01-02 10:00:00.00'),
-  ('richard.hayden', 'Richard', 'Hayden', '2023-01-02 10:00:00.00', '2022-01-02 10:00:00.00');
+INSERT INTO users (user_id, username, first_name, last_name, created, updated) VALUES
+  ('<tommy.callahan>', 'tommy.callahan', 'Tommy', 'Callahan', '2023-01-02 10:00:00.00', '2022-01-02 10:00:00.00'),
+  ('<richard.hayden>', 'richard.hayden', 'Richard', 'Hayden', '2023-01-02 10:00:00.00', '2022-01-02 10:00:00.00');
 
 INSERT INTO profiles (user_id, type, country_code, phone_number, phone_type, email, created, updated) VALUES
-  (1, 'Business', 1, 5551234561, 'Business', 'tommy@callahanautoparts.com', '2022-01-02 10:00:00.00', '2022-01-02 10:00:00.00'),
-  (2, 'Business', 1, 5551234562, 'Business', 'richard@callahanautoparts.com', '2022-01-02 10:00:00.00', '2022-01-02 10:00:00.00');
+  ('<tommy.callahan>', 'Business', 1, 5551234561, 'Business', 'tommy@callahanautoparts.com', '2022-01-02 10:00:00.00', '2022-01-02 10:00:00.00'),
+  ('<richard.hayden>', 'Business', 1, 5551234562, 'Business', 'richard@callahanautoparts.com', '2022-01-02 10:00:00.00', '2022-01-02 10:00:00.00');
 
 INSERT INTO addresses (user_id, type, address_1, city, state, zip_code, country, created, updated) VALUES
-  (1, 'Physical', '145 Provence Boulevard', 'Sandusky', 'OH', 44870, 'United States', '2022-05-01 00:00:00.00', '2022-05-01 00:00:00.00'),
-  (2, 'Physical', '145 Provence Boulevard', 'Sandusky', 'OH', 44870, 'United States', '2022-05-01 00:00:00.00', '2022-05-01 00:00:00.00');
+  ('<tommy.callahan>', 'Physical', '145 Provence Boulevard', 'Sandusky', 'OH', 44870, 'United States', '2022-05-01 00:00:00.00', '2022-05-01 00:00:00.00'),
+  ('<richard.hayden>', 'Physical', '145 Provence Boulevard', 'Sandusky', 'OH', 44870, 'United States', '2022-05-01 00:00:00.00', '2022-05-01 00:00:00.00');
 
 INSERT INTO accounts (account_id, user_id, type, balance, currency, created, updated) VALUES
-  (732959224, 1, 'Checking', 75000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (362929485, 1, 'Savings', 250000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (993804711, 1, 'Investment', 9478.20, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (693787850, 1, 'Crypto', 0.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (762551510, 2, 'Checking', 40000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (145302955, 2, 'Savings', 90000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (126941757, 2, 'Investment', 1327.85, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
-  (554436372, 2, 'Crypto', 0.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00');
+  (732959224, '<tommy.callahan>', 'Checking', 75000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (362929485, '<tommy.callahan>', 'Savings', 250000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (993804711, '<tommy.callahan>', 'Investment', 9478.20, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (693787850, '<tommy.callahan>', 'Crypto', 0.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (762551510, '<richard.hayden>', 'Checking', 40000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (145302955, '<richard.hayden>', 'Savings', 90000.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (126941757, '<richard.hayden>', 'Investment', 1327.85, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00'),
+  (554436372, '<richard.hayden>', 'Crypto', 0.00, 'USD', '2023-01-02 10:00:00.00', '2023-04-05 01:00:00.00');
 
 INSERT INTO balances (account_id, type, balance, date) VALUES
   (732959224, 'Checking', 75000.00, '2023-02-01 01:00:00.00'),
