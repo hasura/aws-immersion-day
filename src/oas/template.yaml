@@ -1,0 +1,240 @@
+openapi: 3.0.3
+
+info:
+  title: AWS Cognito REST API
+  description: |-
+    A REST API wrapper for AWS Cognito. It enables user sign up, 
+    confirmation, log in and log out.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+paths:
+  /auth/login:
+    post:
+      description: Logs in a user
+      requestBody:
+        description: User log in request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogInRequest"
+      responses:
+        "200":
+          description: User log in successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogInResponse"
+        "400":
+          description: Invalid client request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  
+  /auth/logout:
+    post:
+      description: Logs out a user
+      requestBody:
+        description: User log out request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogOutRequest"
+      responses:
+        "200":
+          description: User log out successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+        "400":
+          description: Invalid client request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  
+  /auth/signup:
+    post:
+      description: Creates a new user
+      requestBody:
+        description: User sign-up request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+        "400":
+          description: Invalid client request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  
+  /auth/signup/confirm:
+    post:
+      description: Confirms a new user
+      requestBody:
+        description: User confirmation request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpConfirmRequest"
+      responses:
+        "200":
+          description: User confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+        "400":
+          description: Invalid client request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  
+  /user/profile:
+    get:
+      description: Fetches a user profile
+      parameters:
+        - $ref: "#/components/parameters/AccessTokenQueryString"
+      responses:
+        "200":
+          description: User profile received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "400":
+          description: Invalid client request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Client not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    AccessTokenQueryString:
+      name: access_token
+      in: query
+      required: true
+      schema:
+        type: string
+        example: {token}
+  schemas:
+    DefaultResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        path:
+          type: string
+        status:
+          type: string
+    LogInRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        username:
+          type: string
+    LogInResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+        token:
+          type: object
+          properties:
+            access:
+              type: string
+            id:
+              type: string
+    LogOutRequest:
+      type: object
+      properties:
+        access_token:
+          type: string
+    SignUpRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        password:
+          type: string
+        phone_number:
+          type: string
+        username:
+          type: string
+      required:
+        - email
+        - first_name
+        - last_name
+        - password
+        - phone_number
+        - username
+    SignUpConfirmRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        username:
+          type: string
+      required:
+        - code
+        - username
+    UserProfileResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+            first_name:
+              type: string
+            id:
+              type: string
+            last_name:
+              type: string
+            phone_number:
+              type: string
+            username:
+              type: string
