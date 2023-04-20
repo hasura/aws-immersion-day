@@ -95,6 +95,6 @@ export const lambdaHandler = async function(event, context) {
         }
     });
     
-    await sendResponse(event, context, status, { Users: uuid });
+    await sendResponse(event, context, status, { Users: `${JSON.stringify(uuid)}` });
     return;
 };
