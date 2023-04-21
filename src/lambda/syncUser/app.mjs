@@ -1,33 +1,95 @@
-import axios from "axios";
+import http from "http";
+import https from "https";
+import url from "url";
 
-async function buildRequest (user) {
-    const query = 
-        `mutation SyncUser {
-            insert_users(objects: [
-                {
-                    first_name: "${user.firstName}",
-                    last_name: "${user.lastName}",
-                    profiles: {
-                        data: [
-                            {
-                                email: "${user.email}",
-                                phone_number: ${user.phoneNumber}
-                            }
-                        ]
-                    },
-                    user_id: "${user.userId}",
-                    username: "${user.username}"
-                }
-            ])
-            {
-                affected_rows
-            }
-        }`;
+const getSecrets = async function() {
+    return new Promise(function(resolve, reject) {
+        const options = {
+            hostname: "localhost",
+            headers: {
+                "X-AWS-Parameters-Secrets-Token": process.env.AWS_SESSION_TOKEN
+            },
+            method: "GET",
+            path: `/secretsmanager/get?secretId=${process.env.HASURA_SECRETS_ARN}`,
+            port: 2773
+        };
+        
+        http.request(options, function(res) {
+            let data ="";
+            res.on("data", function(chunk) {
+                data += chunk;
+            });
+            
+            res.on("end", function() {
+                resolve(JSON.parse(JSON.parse(data).SecretString));
+            });
+        }).on("error", function(error) {
+            console.log(error);
+            reject();
+        }).end();
+    });
+};
+
+const graphqlRequest = async function(address, secret, body) {
+    console.log("Sending Request...");
     
-    return query;
-}
+    return new Promise(function(resolve, reject) {
+        const parsedUrl = url.parse(address);
+        const options = {
+            hostname: parsedUrl.hostname,
+            headers: {
+                "Content-Type": "application/json",
+                "X-Hasura-Admin-Secret": secret
+            },
+            method: "POST",
+            path: parsedUrl.path,
+            port: 443
+        };
+        
+        const req = https.request(options, function(res) {
+            let data ="";
+            res.on("data", function(chunk) {
+                data += chunk;
+            });
+            
+            res.on("end", function() {
+                resolve(JSON.parse(data));
+            });
+        }).on("error", function(error) {
+            console.log(error);
+            reject();
+        });
+        
+        req.write(JSON.stringify({ query: body }));
+        req.end();
+    });
+};
 
-export const lambdaHandler = async function (event) {
+const syncUserMutation = async function(user) {
+    return `mutation SyncUser {
+        insert_users(objects: [
+            {
+                first_name: "${user.firstName}",
+                last_name: "${user.lastName}",
+                profiles: {
+                    data: [
+                        {
+                            email: "${user.email}",
+                            phone_number: ${user.phoneNumber}
+                        }
+                    ]
+                },
+                user_id: "${user.userId}",
+                username: "${user.username}"
+            }
+        ], on_conflict: {constraint: users_pkey, update_columns: [username, first_name, last_name]})
+        {
+            affected_rows
+        }
+    }`;
+};
+
+export const lambdaHandler = async function(event, context) {
     const user = {
         email: event.request.userAttributes.email,
         firstName: event.request.userAttributes["custom:first_name"],
@@ -37,19 +99,11 @@ export const lambdaHandler = async function (event) {
         username: event.userName
     };
     
-    const graphMutation = await buildRequest(user);
-
-    await axios({
-       method: "POST",
-       url: process.env.HASURA_GRAPHQL_API,
-       headers: {
-           "Content-Type": "application/json",
-           "X-Hasura-Admin-Secret": process.env.HASURA_ADMIN_SECRET
-       },
-       data: {
-           query: graphMutation
-       }
-    });
+    const hasura = await getSecrets();
+    const mutation = await syncUserMutation(user);
+    const response = await graphqlRequest(hasura.graphql_api, hasura.admin_secret, mutation);
+    
+    console.log(`Response: ${JSON.stringify(response)}`);
     
     return event;
 };
