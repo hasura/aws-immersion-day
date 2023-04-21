@@ -67,23 +67,22 @@ const graphqlRequest = async function(address, secret, body) {
 
 const syncUserMutation = async function(user) {
     return `mutation SyncUser {
-        insert_users(objects: [
-            {
-                first_name: "${user.firstName}",
-                last_name: "${user.lastName}",
-                profiles: {
-                    data: [
-                        {
-                            email: "${user.email}",
-                            phone_number: ${user.phoneNumber}
-                        }
-                    ]
-                },
-                user_id: "${user.userId}",
-                username: "${user.username}"
+        insert_profiles(objects: {
+            first_name: "${user.firstName}",
+            last_name: "${user.lastName}",
+            email: "${user.email}",
+            user: {
+                data: {
+                    user_id: "${user.userId}",
+                    username: "${user.username}"
+                }, on_conflict: {constraint: users_pkey, update_columns: [username]}
+            },
+            phones: {
+                data: {
+                    phone_number: ${user.phoneNumber}
+                }, on_conflict: {constraint: phones_pkey, update_columns: [phone_number]}
             }
-        ], on_conflict: {constraint: users_pkey, update_columns: [username, first_name, last_name]})
-        {
+        }) {
             affected_rows
         }
     }`;
