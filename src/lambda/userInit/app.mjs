@@ -3,9 +3,9 @@ import url from "url";
 import { createUser, setPassword } from "./auth.mjs";
 
 const getUsers = async function(url) {
-    return new Promise(function(resolve) {
-        let data = "";
+    return new Promise(function(resolve, reject) {
         https.get(url, function(res) {
+            let data = "";
             res.on("data", function(chunk) {
                 data += chunk;
             });
@@ -13,7 +13,10 @@ const getUsers = async function(url) {
             res.on("end", function() {
                 resolve(JSON.parse(data).users);
             });
-        });
+        }).on("error", function(error) {
+            console.log(error);
+            reject();
+        }).end();
     });
 };
 
@@ -38,16 +41,15 @@ const sendResponse = async function(event, context, status, data) {
         },
         method: "PUT",
         path: parsedUrl.path,
-        port: 443,
-        requestUnauthorized: false,
-        requestCert: false
+        port: 443
     };
     
     console.log(`Sending Response...\n`);
     
     return new Promise(function(resolve, reject) {
-        let data = "";
-        const request = https.request(options, function(res) {
+        const req = https.request(options, function(res) {
+            let data = "";
+            
             console.log(`Status: ${res.statusCode}`);
             console.log(`Headers: ${JSON.stringify(res.headers)}`);
             
@@ -60,16 +62,14 @@ const sendResponse = async function(event, context, status, data) {
                 resolve();
                 context.done();
             });
-        });
-        
-        request.on("error", function(error) {
+        }).on("error", function(error) {
             console.log(`Error: ${error}`);
             reject();
             context.done();
         });
         
-        request.write(body);
-        request.end();
+        req.write(body);
+        req.end();
     });
 };
 
@@ -83,10 +83,10 @@ export const lambdaHandler = async function(event, context) {
     
     await getUsers(process.env.USERS_LIST).then(async function(users) {
         for (const user of users) {
-            await createUser(user).then(function(response) {
-                if (response.status === 201) {
+            await createUser(user).then(function(res) {
+                if (res.status === 201) {
                     status = "SUCCESS";
-                    uuid[user.username] = response.uuid;
+                    uuid[user.username] = res.uuid;
                     setPassword(user);
                 } else {
                     status = "FAILED";
