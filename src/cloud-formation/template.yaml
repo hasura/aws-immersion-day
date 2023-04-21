@@ -12,45 +12,36 @@ Parameters:
     Type: String
     Default: hasura-aws-immersion-day
 
+Mappings:
+  ParamSecretExtensionMap:
+    us-east-1:
+      Arn: arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-east-2:
+      Arn: arn:aws:lambda:us-east-2:590474943231:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-west-1:
+      Arn: arn:aws:lambda:us-west-1:997803712105:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-west-2:
+      Arn: arn:aws:lambda:us-west-2:345057560386:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+
 Outputs:
-  ApiConfirmSignUpUrl:
+  DbPassword:
+    Value: !Ref dbPassword
+  DbUsername:
+    Value: !Ref dbUsername
+  HasuraGraphqlJwtSecret:
     Value: !Sub
-      - "http://${hostname}/api/v1/auth/signup/confirm"
-      - hostname: !GetAtt applicationLoadBalancer.DNSName
-  ApiLogInUrl:
-    Value: !Sub
-      - "http://${hostname}/api/v1/auth/login"
-      - hostname: !GetAtt applicationLoadBalancer.DNSName
-  ApiLogOutUrl:
-    Value: !Sub
-      - "http://${hostname}/api/v1/auth/logout"
-      - hostname: !GetAtt applicationLoadBalancer.DNSName
-  ApiSignUpUrl:
-    Value: !Sub
-      - "http://${hostname}/api/v1/auth/signup"
-      - hostname: !GetAtt applicationLoadBalancer.DNSName
-  ApiUserProfileUrl:
-    Value: !Sub
-      - "http://${hostname}/api/v1/user/profile"
-      - hostname: !GetAtt applicationLoadBalancer.DNSName
-  DbConnectionStringUserData:
+      - "{\"type\":\"RS256\",\"jwk_url\":\"https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json\",\"claims_format\":\"stringified_json\"}"
+      - region: us-east-1
+        userPoolId: !Ref hasuraUserPool
+  LoadBalancer:
+    Value: !GetAtt applicationLoadBalancer.DNSName
+  PgUserData:
     Value: !Sub
       - "postgres://${username}:${password}@${endpoint}:5432/user_data"
       - endpoint: !GetAtt rdsPostgres.Endpoint.Address
         password: !Ref dbPassword
         username: !Ref dbUsername
-  HasuraJwtSecret:
-    Value: !Sub
-      - "{\"type\":\"RS256\",\"jwk_url\":\"https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json\",\"claims_format\":\"stringified_json\"}"
-      - region: us-east-1
-        userPoolId: !Ref hasuraUserPool
-  LoadBalancerDnsName:
-    Value: !GetAtt applicationLoadBalancer.DNSName
-  PostgresPassword:
-    Value: !Ref dbPassword
-  PostgresUsername:
-    Value: !Ref dbUsername
-  RdsEndpoint:
+  RdsHostname:
     Value: !GetAtt rdsPostgres.Endpoint.Address
 
 Resources:
@@ -373,6 +364,15 @@ Resources:
     Type: AWS::Cognito::UserPoolClient
   
   
+  ## Custom Resource ##
+  userInit:
+    DependsOn:
+      - userInitFunction
+    Properties:
+      ServiceToken: !GetAtt userInitFunction.Arn
+    Type: Custom::userInit
+  
+  
   ## ECS ##
   ecsCluster:
     Properties:
@@ -428,7 +428,7 @@ Resources:
               Value: !GetAtt userInit.Users
       Cpu: 512
       ExecutionRoleArn: !GetAtt ecsTaskExecutionRole.Arn
-      Family: postgres-init
+      #Family: postgres-init
       Memory: 1024
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -461,37 +461,6 @@ Resources:
       ServiceName: postgres-init
       TaskDefinition: !Ref postgresInitTaskDefinition
     Type: AWS::ECS::Service
-  
-  
-  ## RDS ##
-  dbSubnetGroup:
-    Properties:
-      DBSubnetGroupDescription: Publicly accessible subnets
-      DBSubnetGroupName: !Join ["-", [!Ref prefixName, subnet-group]]
-      SubnetIds:
-        - !Ref publicSubnetOne
-        - !Ref publicSubnetTwo
-    Type: AWS::RDS::DBSubnetGroup
-  
-  rdsPostgres:
-    DeletionPolicy: Delete
-    DependsOn:
-      - defaultRoute
-    Properties:
-      AllocatedStorage: "20"
-      BackupRetentionPeriod: 0
-      DBInstanceClass: db.t3.micro
-      DBInstanceIdentifier: !Join ["-", [!Ref prefixName, rds-postgres]]
-      DBSubnetGroupName: !Ref dbSubnetGroup
-      DeleteAutomatedBackups: true
-      Engine: postgres
-      EngineVersion: "15.2"
-      MasterUsername: !Ref dbUsername
-      MasterUserPassword: !Ref dbPassword
-      PubliclyAccessible: true
-      VPCSecurityGroups:
-        - !Ref dbSecurityGroup
-    Type: AWS::RDS::DBInstance
   
   
   ## Lambda ##
@@ -579,10 +548,11 @@ Resources:
         S3Key: lambda/syncUser.zip
       Environment:
         Variables:
-          HASURA_ADMIN_SECRET: <insert here>
-          HASURA_GRAPHQL_API: <insert here>
+          HASURA_SECRETS_ARN: !Ref hasuraSecrets
       FunctionName: SyncUser
       Handler: app.lambdaHandler
+      Layers:
+        - !FindInMap [ParamSecretExtensionMap, !Ref AWS::Region, Arn]
       MemorySize: 128
       Role: !GetAtt lambdaExecutionRole.Arn
       Runtime: nodejs18.x
@@ -692,14 +662,51 @@ Resources:
                 Resource: arn:aws:s3:::hasura-aws-immersion-day/init/*
             Version: "2012-10-17"
           PolicyName: s3-read-only-access
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - secretsmanager:GetSecretValue
+                Effect: Allow
+                Resource: !Ref hasuraSecrets
+          PolicyName: secrets-manager-read-only-access
       RoleName: !Join ["-", [!Ref prefixName, lambda-execution-role]]
     Type: AWS::IAM::Role
   
   
-  ## Custom Resource ##
-  userInit:
-    DependsOn:
-      - userInitFunction
+  ## RDS ##
+  dbSubnetGroup:
     Properties:
-      ServiceToken: !GetAtt userInitFunction.Arn
-    Type: Custom::userInit
+      DBSubnetGroupDescription: Publicly accessible subnets
+      DBSubnetGroupName: !Join ["-", [!Ref prefixName, subnet-group]]
+      SubnetIds:
+        - !Ref publicSubnetOne
+        - !Ref publicSubnetTwo
+    Type: AWS::RDS::DBSubnetGroup
+  
+  rdsPostgres:
+    DeletionPolicy: Delete
+    DependsOn:
+      - defaultRoute
+    Properties:
+      AllocatedStorage: "20"
+      BackupRetentionPeriod: 0
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: !Join ["-", [!Ref prefixName, rds-postgres]]
+      DBSubnetGroupName: !Ref dbSubnetGroup
+      DeleteAutomatedBackups: true
+      Engine: postgres
+      EngineVersion: "15.2"
+      MasterUsername: !Ref dbUsername
+      MasterUserPassword: !Ref dbPassword
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref dbSecurityGroup
+    Type: AWS::RDS::DBInstance
+  
+  
+  ## Secrets Manager ##
+  hasuraSecrets:
+    Properties:
+      Name: hasura
+      SecretString: "{\"admin_secret\":\"<insert_here>\",\"graphql_api\":\"<insert_here>\"}"
+    Type: AWS::SecretsManager::Secret
