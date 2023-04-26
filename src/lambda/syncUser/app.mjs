@@ -47,7 +47,7 @@ const graphqlRequest = async function(address, secret, body) {
         };
         
         const req = https.request(options, function(res) {
-            let data ="";
+            let data = "";
             res.on("data", function(chunk) {
                 data += chunk;
             });
