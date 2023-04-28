@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "email": "tommy@callahanautoparts.com",
+      "first_name": "Tommy",
+      "last_name": "Callahan",
+      "password": "TommyBoy!23",
+      "phone_number": "5551234001",
+      "username": "tommy.callahan"
+    },
+    {
+      "email": "richard@callahanautoparts.com",
+      "first_name": "Richard",
+      "last_name": "Hayden",
+      "password": "TommyBoy!23",
+      "phone_number": "5551234002",
+      "username": "richard.hayden"
+    }
+  ]
+}
