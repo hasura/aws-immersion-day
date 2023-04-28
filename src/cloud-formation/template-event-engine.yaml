@@ -1,0 +1,754 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Hasura AWS Immersion Day Template
+
+Mappings:
+  ParamSecretExtensionMap:
+    us-east-1:
+      Arn: arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-east-2:
+      Arn: arn:aws:lambda:us-east-2:590474943231:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-west-1:
+      Arn: arn:aws:lambda:us-west-1:997803712105:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+    us-west-2:
+      Arn: arn:aws:lambda:us-west-2:345057560386:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+
+Outputs:
+  DbPassword:
+    Value: pgpassword
+  DbUsername:
+    Value: postgres
+  LoadBalancer:
+    Value: !GetAtt applicationLoadBalancer.DNSName
+  MetadataUrl:
+    Value: !Sub
+      - "http://${hostname}/api/v1/metadata.json"
+      - hostname: !GetAtt applicationLoadBalancer.DNSName
+  PgDatabaseUrl:
+    Value: !Sub
+      - "postgres://postgres:pgpassword@${endpoint}:5432/<db_name>"
+      - endpoint: !GetAtt rdsPostgres.Endpoint.Address
+  RdsHostname:
+    Value: !GetAtt rdsPostgres.Endpoint.Address
+
+Resources:
+  ## VPC ##
+  vpc:
+    Properties:
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-vpc
+    Type: AWS::EC2::VPC
+  
+  publicSubnetOne:
+    Properties:
+      AvailabilityZone: !Select [0, Fn::GetAZs: !Ref AWS::Region]
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-public-subnet-1
+      VpcId: !Ref vpc
+    Type: AWS::EC2::Subnet
+  
+  publicSubnetTwo:
+    Properties:
+      AvailabilityZone: !Select [1, Fn::GetAZs: !Ref AWS::Region]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-public-subnet-2
+      VpcId: !Ref vpc
+    Type: AWS::EC2::Subnet
+  
+  internetGateway:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-igw
+    Type: AWS::EC2::InternetGateway
+  
+  internetGatewayAttachment:
+    Properties:
+      InternetGatewayId: !Ref internetGateway
+      VpcId: !Ref vpc
+    Type: AWS::EC2::VPCGatewayAttachment
+  
+  defaultRoute:
+    DependsOn:
+      - internetGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref internetGateway
+      RouteTableId: !Ref publicRouteTable
+    Type: AWS::EC2::Route
+  
+  publicRouteTable:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-public-rtb
+      VpcId: !Ref vpc
+    Type: AWS::EC2::RouteTable
+  
+  publicSubnetOneRouteTableAssociation:
+    Properties:
+      RouteTableId: !Ref publicRouteTable
+      SubnetId: !Ref publicSubnetOne
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  
+  publicSubnetTwoRouteTableAssociation:
+    Properties:
+      RouteTableId: !Ref publicRouteTable
+      SubnetId: !Ref publicSubnetTwo
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  
+  albSecurityGroup:
+    Properties:
+      GroupDescription: Allow Inbound HTTP Traffic
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-lambda-sg
+      VpcId: !Ref vpc
+    Type: AWS::EC2::SecurityGroup
+  
+  dbSecurityGroup:
+    Properties:
+      GroupDescription: Allow Inboud Hasura Cloud Postgres Traffic
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 5432 
+          IpProtocol: tcp
+          ToPort: 5432
+      Tags:
+        - Key: Name
+          Value: hasura-aws-immersion-day-postgres-sg
+      VpcId: !Ref vpc
+    Type:  AWS::EC2::SecurityGroup
+  
+  
+  ## Application Load Balancer ##
+  applicationLoadBalancer:
+    DependsOn:
+      - defaultRoute
+    Properties:
+      IpAddressType: ipv4
+      Name: hasura-aws-immersion-day-alb
+      Scheme: internet-facing
+      SecurityGroups: 
+        - !Ref albSecurityGroup
+      Subnets: 
+        - !Ref publicSubnetOne
+        - !Ref publicSubnetTwo
+      Type: application
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  
+  albListener:
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref albTargetGroupDefault
+          Type: forward
+      LoadBalancerArn: !Ref applicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+    Type: AWS::ElasticLoadBalancingV2::Listener
+  
+  albListenerConfigureProject:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupConfigureProject
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/metadata.json
+      ListenerArn: !Ref albListener
+      Priority: 6
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albListenerConfirmSignUp:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupConfirmSignUp
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/auth/signup/confirm
+      ListenerArn: !Ref albListener
+      Priority: 4
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albListenerLogIn:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupLogIn
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/auth/login
+      ListenerArn: !Ref albListener
+      Priority: 1
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albListenerLogOut:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupLogOut
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/auth/logout
+      ListenerArn: !Ref albListener
+      Priority: 2
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albListenerSignUp:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupSignUp
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/auth/signup
+      ListenerArn: !Ref albListener
+      Priority: 3
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albListenerUserProfile:
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref albTargetGroupUserProfile
+          Type: forward
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/v1/user/profile
+      ListenerArn: !Ref albListener
+      Priority: 5
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  
+  albTargetGroupConfigureProject:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt configureProjectFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupConfirmSignUp:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt confirmSignUpFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupDefault:
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref vpc
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupLogIn:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt logInFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupLogOut:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt logOutFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupSignUp:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt signUpFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  albTargetGroupUserProfile:
+    Properties:
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt userProfileFunction.Arn
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  
+  ## Cognito ##
+  hasuraUserPool:
+    Properties:
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      AliasAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      LambdaConfig:
+        PostConfirmation: !GetAtt syncUserFunction.Arn
+        PreTokenGeneration: !GetAtt customJwtClaimsFunction.Arn
+      MfaConfiguration: "OFF"
+      Schema:
+        - AttributeDataType: String
+          Mutable: true
+          Name: email
+          Required: true
+        - AttributeDataType: String
+          Mutable: true
+          Name: first_name
+          Required: false
+          StringAttributeConstraints:
+            MinLength: 1
+        - AttributeDataType: String
+          Mutable: true
+          Name: last_name
+          Required: false
+          StringAttributeConstraints:
+            MinLength: 1
+        - AttributeDataType: Number
+          Mutable: true
+          Name: phone
+          Required: false
+          NumberAttributeConstraints:
+            MaxValue: 999999999999999
+            MinValue: 1000
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      UserPoolName: hasura
+    Type:  AWS::Cognito::UserPool
+  
+  hasuraUserPoolClient:
+    Properties:
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - phone
+      CallbackURLs:
+        - https://localhost/callback
+      ClientName: hasura-client
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+      GenerateSecret: false
+      LogoutURLs:
+        - https://localhost/logout
+      PreventUserExistenceErrors: ENABLED
+      SupportedIdentityProviders:
+        - COGNITO
+      UserPoolId: !Ref hasuraUserPool
+    Type: AWS::Cognito::UserPoolClient
+  
+  
+  ## Custom Resource ##
+  userInit:
+    DependsOn:
+      - userInitFunction
+    Properties:
+      ServiceToken: !GetAtt userInitFunction.Arn
+    Type: Custom::userInit
+  
+  
+  ## ECS ##
+  ecsCluster:
+    Properties:
+      ClusterName: hasura-aws-immersion-day-ecs-cluster
+    Type:  AWS::ECS::Cluster
+  
+  ecsTaskExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      RoleName: hasura-aws-immersion-day-ecs-task-execution-role
+    Type: AWS::IAM::Role
+  
+  
+  ## Fargate ##
+  postgresInitTaskDefinition:
+    Properties:
+      ContainerDefinitions:
+        - Name: echo-server
+          Image: igraphql/echo-server:latest
+          Essential: true
+          Cpu: 256
+          Memory: 512
+          PortMappings:
+            - Name: http
+              ContainerPort: 80
+              Protocol: tcp
+          Environment:
+            - Name: LOG_LEVEL
+              Value: info
+        - Name: postgres-init
+          Image: igraphql/postgres-init:latest
+          Essential: false
+          Cpu: 256
+          Memory: 512
+          Environment:
+            - Name: PGHOST
+              Value: !GetAtt rdsPostgres.Endpoint.Address
+            - Name: PGPASSWORD
+              Value: pgpassword
+            - Name: PGUSER
+              Value: postgres
+            - Name: USER_DATA
+              Value: !GetAtt userInit.Users
+      Cpu: 512
+      ExecutionRoleArn: !GetAtt ecsTaskExecutionRole.Arn
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+    Type: AWS::ECS::TaskDefinition
+  
+  postgresInitService:
+    DependsOn:
+      - albListener
+      - postgresInitTaskDefinition
+      - rdsPostgres
+    Properties:
+      Cluster: !Ref ecsCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: echo-server
+          ContainerPort: 80
+          TargetGroupArn: !Ref albTargetGroupDefault
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref albSecurityGroup
+          Subnets:
+            - !Ref publicSubnetOne
+            - !Ref publicSubnetTwo
+      ServiceName: postgres-init
+      TaskDefinition: !Ref postgresInitTaskDefinition
+    Type: AWS::ECS::Service
+  
+  
+  ## Lambda ##
+  configureProjectFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/configureProject.zip
+      Environment:
+        Variables:
+          HASURA_GRAPHQL_JWT_SECRET: !Sub
+            - "{\"type\":\"RS256\",\"jwk_url\":\"https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json\",\"claims_format\":\"stringified_json\"}"
+            - region: us-east-1
+              userPoolId: !Ref hasuraUserPool
+          HASURA_SECRETS_ARN: !Ref hasuraSecrets
+          METADATA_URL: "https://hasura-aws-immersion-day.s3.amazonaws.com/init/metadata.json"
+          OPENAPI_SERVER_URL: !Sub
+            - "http://${hostname}/api/v1"
+            - hostname: !GetAtt applicationLoadBalancer.DNSName
+          PG_DATABASE_URL: !Sub
+            - "postgres://postgres:pgpassword@${endpoint}:5432"
+            - endpoint: !GetAtt rdsPostgres.Endpoint.Address
+      FunctionName: ConfigureProject
+      Handler: app.lambdaHandler
+      Layers:
+        - !FindInMap [ParamSecretExtensionMap, !Ref AWS::Region, Arn]
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 10
+    Type: AWS::Lambda::Function
+  
+  confirmSignUpFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/confirmSignUp.zip
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref hasuraUserPoolClient
+      FunctionName: ConfirmSignUp
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  customJwtClaimsFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/customJwtClaims.zip
+      FunctionName: CustomJwtClaims
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  logInFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/logIn.zip
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref hasuraUserPoolClient
+      FunctionName: LogIn
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  logOutFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/logOut.zip
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref hasuraUserPoolClient
+      FunctionName: LogOut
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  signUpFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/signUp.zip
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref hasuraUserPoolClient
+      FunctionName: SignUp
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  syncUserFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/syncUser.zip
+      Environment:
+        Variables:
+          HASURA_SECRETS_ARN: !Ref hasuraSecrets
+      FunctionName: SyncUser
+      Handler: app.lambdaHandler
+      Layers:
+        - !FindInMap [ParamSecretExtensionMap, !Ref AWS::Region, Arn]
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  userInitFunction:
+    DependsOn:
+      - hasuraUserPoolClient
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/userInit.zip
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref hasuraUserPool
+          USERS_LIST: https://hasura-aws-immersion-day.s3.amazonaws.com/init/users.json
+      FunctionName: UserInit
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+    
+  userProfileFunction:
+    Properties:
+      Code:
+        S3Bucket: hasura-aws-immersion-day
+        S3Key: lambda/userProfile.zip
+      FunctionName: UserProfile
+      Handler: app.lambdaHandler
+      MemorySize: 128
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 5
+    Type: AWS::Lambda::Function
+  
+  albInvokeConfigureProject:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt configureProjectFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  albInvokeConfirmSignUp:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt confirmSignUpFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  albInvokeLogIn:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt logInFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  albInvokeLogOut:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt logOutFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  albInvokeSignUp:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt signUpFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  albInvokeUserProfile:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt userProfileFunction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  cognitoInvokeCustomJwtClaims:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt customJwtClaimsFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  cognitoInvokeSyncUser:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt syncUserFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+    Type: AWS::Lambda::Permission
+  
+  lambdaExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:getObject
+                Effect: Allow
+                Resource: arn:aws:s3:::hasura-aws-immersion-day/init/*
+            Version: "2012-10-17"
+          PolicyName: s3-read-only-access
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - secretsmanager:GetSecretValue
+                Effect: Allow
+                Resource: !Ref hasuraSecrets
+          PolicyName: secrets-manager-read-only-access
+      RoleName: hasura-aws-immersion-day-lambda-execution-role
+    Type: AWS::IAM::Role
+  
+  
+  ## RDS ##
+  dbSubnetGroup:
+    Properties:
+      DBSubnetGroupDescription: Publicly accessible subnets
+      DBSubnetGroupName: hasura-aws-immersion-day-subnet-group
+      SubnetIds:
+        - !Ref publicSubnetOne
+        - !Ref publicSubnetTwo
+    Type: AWS::RDS::DBSubnetGroup
+  
+  rdsPostgres:
+    DeletionPolicy: Delete
+    DependsOn:
+      - defaultRoute
+    Properties:
+      AllocatedStorage: "20"
+      BackupRetentionPeriod: 0
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: hasura-aws-immersion-day-rds-postgres
+      DBSubnetGroupName: !Ref dbSubnetGroup
+      DeleteAutomatedBackups: true
+      Engine: postgres
+      EngineVersion: "15.2"
+      MasterUsername: postgres
+      MasterUserPassword: pgpassword
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref dbSecurityGroup
+    Type: AWS::RDS::DBInstance
+  
+  
+  ## Secrets Manager ##
+  hasuraSecrets:
+    Properties:
+      Name: hasura
+      SecretString: "{\"access_token\":\"<insert_here>\",\"admin_secret\":\"<insert_here>\",\"graphql_api\":\"<insert_here>\",\"project_id\":\"<insert_here>\"}"
+    Type: AWS::SecretsManager::Secret
