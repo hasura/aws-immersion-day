@@ -1,0 +1,853 @@
+{
+  "resource_version": 482,
+  "metadata": {
+    "version": 3,
+    "sources": [
+      {
+        "name": "accounts",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "account_users",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "account",
+                "using": {
+                  "foreign_key_constraint_on": "account_id"
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "user_id": "user_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "users",
+                    "table": {
+                      "name": "users",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "user"
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "accounts",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "account_users",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "account_id",
+                    "table": {
+                      "name": "account_users",
+                      "schema": "public"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "history",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "account_id",
+                    "table": {
+                      "name": "history",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "investments",
+                    "table": {
+                      "name": "portfolios",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "portfolio"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "array",
+                    "source": "transactions",
+                    "table": {
+                      "name": "transactions",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "transactions"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "crypto",
+                    "table": {
+                      "name": "wallets",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "wallet"
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "history",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "account",
+                "using": {
+                  "foreign_key_constraint_on": "account_id"
+                }
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_ACCOUNTS"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "crypto",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "crypto",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "wallet",
+                "using": {
+                  "foreign_key_constraint_on": "wallet_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "wallets",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "cryptos",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "wallet_id",
+                    "table": {
+                      "name": "crypto",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "accounts",
+                    "table": {
+                      "name": "accounts",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "account"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "array",
+                    "source": "trades",
+                    "table": {
+                      "name": "trades",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "trades"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_CRYPTO"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "investments",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "assets",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "portfolio",
+                "using": {
+                  "foreign_key_constraint_on": "portfolio_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "portfolios",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "assets",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "portfolio_id",
+                    "table": {
+                      "name": "assets",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "accounts",
+                    "table": {
+                      "name": "accounts",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "account"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "array",
+                    "source": "trades",
+                    "table": {
+                      "name": "trades",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "trades"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_INVESTMENTS"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "trades",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "assets",
+              "schema": "public"
+            },
+            "configuration": {
+              "column_config": {},
+              "custom_column_names": {},
+              "custom_name": "trade_assets",
+              "custom_root_fields": {}
+            },
+            "object_relationships": [
+              {
+                "name": "attribute",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "asset_id",
+                    "table": {
+                      "name": "attributes",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "attributes",
+              "schema": "public"
+            },
+            "configuration": {
+              "column_config": {},
+              "custom_column_names": {},
+              "custom_name": "trade_attributes",
+              "custom_root_fields": {}
+            },
+            "object_relationships": [
+              {
+                "name": "asset",
+                "using": {
+                  "foreign_key_constraint_on": "asset_id"
+                }
+              },
+              {
+                "name": "trade",
+                "using": {
+                  "foreign_key_constraint_on": "trade_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "trades",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "attribute",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "trade_id",
+                    "table": {
+                      "name": "attributes",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "investments",
+                    "table": {
+                      "name": "portfolios",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "portfolio"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "crypto",
+                    "table": {
+                      "name": "wallets",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "wallet"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_TRADES"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "transactions",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "attributes",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "transaction",
+                "using": {
+                  "foreign_key_constraint_on": "transaction_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "transactions",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "attribute",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "transaction_id",
+                    "table": {
+                      "name": "attributes",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "account_id": "account_id"
+                    },
+                    "relationship_type": "object",
+                    "source": "accounts",
+                    "table": {
+                      "name": "accounts",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "account"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_TRANSACTIONS"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "users",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "addresses",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "profile",
+                "using": {
+                  "foreign_key_constraint_on": "profile_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "phones",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "profile",
+                "using": {
+                  "foreign_key_constraint_on": "profile_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "profiles",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "user",
+                "using": {
+                  "foreign_key_constraint_on": "user_id"
+                }
+              }
+            ],
+            "array_relationships": [
+              {
+                "name": "addresses",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "profile_id",
+                    "table": {
+                      "name": "addresses",
+                      "schema": "public"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "phones",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "profile_id",
+                    "table": {
+                      "name": "phones",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "users",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "profile",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "user_id",
+                    "table": {
+                      "name": "profiles",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "user_id": "user_id"
+                    },
+                    "relationship_type": "array",
+                    "source": "accounts",
+                    "table": {
+                      "name": "account_users",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "accounts"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_USERS"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      }
+    ],
+    "actions": [
+      {
+        "name": "userLogin",
+        "definition": {
+          "handler": "http://{LOAD_BALANCER_HOSTNAME}/api/v1",
+          "output_type": "LogInResponse",
+          "forward_client_headers": true,
+          "arguments": [
+            {
+              "name": "logInRequestInput",
+              "type": "LogInRequestInput!"
+            }
+          ],
+          "request_transform": {
+            "body": {
+              "action": "transform",
+              "template": "{{$body.input.logInRequestInput}}"
+            },
+            "method": "POST",
+            "query_params": {},
+            "template_engine": "Kriti",
+            "url": "{{$base_url}}/auth/login",
+            "version": 2
+          },
+          "type": "mutation",
+          "kind": "synchronous"
+        },
+        "comment": "Logs in a user"
+      },
+      {
+        "name": "userLogout",
+        "definition": {
+          "handler": "http://{LOAD_BALANCER_HOSTNAME}/api/v1",
+          "output_type": "DefaultResponse",
+          "forward_client_headers": true,
+          "arguments": [
+            {
+              "name": "logOutRequestInput",
+              "type": "LogOutRequestInput!"
+            }
+          ],
+          "request_transform": {
+            "body": {
+              "action": "transform",
+              "template": "{\n  \"access_token\": {{$body.input.logOutRequestInput?.accessToken}}\n}"
+            },
+            "method": "POST",
+            "query_params": {},
+            "template_engine": "Kriti",
+            "url": "{{$base_url}}/auth/logout",
+            "version": 2
+          },
+          "type": "mutation",
+          "kind": "synchronous"
+        },
+        "comment": "Logs out a user"
+      },
+      {
+        "name": "userSignup",
+        "definition": {
+          "handler": "http://{LOAD_BALANCER_HOSTNAME}/api/v1",
+          "output_type": "DefaultResponse",
+          "forward_client_headers": true,
+          "arguments": [
+            {
+              "name": "signUpRequestInput",
+              "type": "SignUpRequestInput!"
+            }
+          ],
+          "request_transform": {
+            "body": {
+              "action": "transform",
+              "template": "{\n  \"email\": {{$body.input.signUpRequestInput?.email}},\n  \"first_name\": {{$body.input.signUpRequestInput?.firstName}},\n  \"last_name\": {{$body.input.signUpRequestInput?.lastName}},\n  \"password\": {{$body.input.signUpRequestInput?.password}},\n  \"phone_number\": {{$body.input.signUpRequestInput?.phoneNumber}},\n  \"username\": {{$body.input.signUpRequestInput?.username}}\n}"
+            },
+            "method": "POST",
+            "query_params": {},
+            "template_engine": "Kriti",
+            "url": "{{$base_url}}/auth/signup",
+            "version": 2
+          },
+          "type": "mutation",
+          "kind": "synchronous"
+        },
+        "comment": "Creates a new user"
+      },
+      {
+        "name": "userSignupConfirm",
+        "definition": {
+          "handler": "http://{LOAD_BALANCER_HOSTNAME}/api/v1",
+          "output_type": "DefaultResponse",
+          "forward_client_headers": true,
+          "arguments": [
+            {
+              "name": "signUpConfirmRequestInput",
+              "type": "SignUpConfirmRequestInput!"
+            }
+          ],
+          "request_transform": {
+            "body": {
+              "action": "transform",
+              "template": "{{$body.input.signUpConfirmRequestInput}}"
+            },
+            "method": "POST",
+            "query_params": {},
+            "template_engine": "Kriti",
+            "url": "{{$base_url}}/auth/signup/confirm",
+            "version": 2
+          },
+          "type": "mutation",
+          "kind": "synchronous"
+        },
+        "comment": "Confirms a new user"
+      }
+    ],
+    "custom_types": {
+      "input_objects": [
+        {
+          "name": "LogInRequestInput",
+          "fields": [
+            {
+              "name": "password",
+              "type": "String"
+            },
+            {
+              "name": "username",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "LogOutRequestInput",
+          "fields": [
+            {
+              "name": "accessToken",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "SignUpRequestInput",
+          "fields": [
+            {
+              "name": "email",
+              "type": "String!"
+            },
+            {
+              "name": "firstName",
+              "type": "String!"
+            },
+            {
+              "name": "lastName",
+              "type": "String!"
+            },
+            {
+              "name": "password",
+              "type": "String!"
+            },
+            {
+              "name": "phoneNumber",
+              "type": "String!"
+            },
+            {
+              "name": "username",
+              "type": "String!"
+            }
+          ]
+        },
+        {
+          "name": "SignUpConfirmRequestInput",
+          "fields": [
+            {
+              "name": "code",
+              "type": "String!"
+            },
+            {
+              "name": "username",
+              "type": "String!"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "name": "LogInResponse",
+          "fields": [
+            {
+              "name": "message",
+              "type": "String"
+            },
+            {
+              "name": "status",
+              "type": "String"
+            },
+            {
+              "name": "token",
+              "type": "Token"
+            }
+          ]
+        },
+        {
+          "name": "Token",
+          "fields": [
+            {
+              "name": "access",
+              "type": "String"
+            },
+            {
+              "name": "id",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "DefaultResponse",
+          "fields": [
+            {
+              "name": "message",
+              "type": "String"
+            },
+            {
+              "name": "status",
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
