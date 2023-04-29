@@ -387,6 +387,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE users (
     user_id UUID PRIMARY KEY,
     username CHARACTER VARYING(32) NOT NULL,
+    national_id CHARACTER VARYING(32),
     created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
     updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
 );
@@ -402,7 +403,6 @@ CREATE TABLE profiles (
     first_name CHARACTER VARYING(64) NOT NULL,
     last_name CHARACTER VARYING(64) NOT NULL,
     nickname CHARACTER VARYING(64),
-    national_id CHARACTER VARYING(32),
     birthday DATE,
     email CHARACTER VARYING(256) NOT NULL,
     avatar TEXT,
@@ -470,9 +470,9 @@ EXECUTE PROCEDURE update_timestamp();
 
 \c users
 
-INSERT INTO users (user_id, username, created, updated) VALUES
-  ('<tommy.callahan>', 'tommy.callahan', '2023-01-02 10:05:0.128', '2023-01-02 10:05:0.128'),
-  ('<richard.hayden>', 'richard.hayden', '2023-01-02 10:12:0.256', '2023-01-02 10:12:0.256');
+INSERT INTO users (user_id, username, national_id, created, updated) VALUES
+  ('<tommy.callahan>', 'tommy.callahan', '453-98-7261', '2023-01-02 10:05:0.128', '2023-01-02 10:05:0.128'),
+  ('<richard.hayden>', 'richard.hayden', '862-23-0179', '2023-01-02 10:12:0.256', '2023-01-02 10:12:0.256');
 
 INSERT INTO profiles (user_id, profile_id, first_name, last_name, email, created, updated) VALUES
   ('<tommy.callahan>', '1000', 'Tommy', 'Callahan', 'tommy@callahanautoparts.com', '2023-01-02 10:05:0.128', '2023-01-02 10:05:0.128'),
