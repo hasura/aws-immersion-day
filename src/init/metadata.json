@@ -1,5 +1,5 @@
 {
-  "resource_version": 482,
+  "resource_version": 529,
   "metadata": {
     "version": 3,
     "sources": [
@@ -143,6 +143,44 @@
             },
             "isolation_level": "read-committed",
             "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "credit_history",
+        "kind": "athena",
+        "tables": [
+          {
+            "table": [
+              "credit_history"
+            ],
+            "remote_relationships": [
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "username": "username"
+                    },
+                    "relationship_type": "object",
+                    "source": "users",
+                    "table": {
+                      "name": "users",
+                      "schema": "public"
+                    }
+                  }
+                },
+                "name": "user"
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "template": null,
+          "timeout": null,
+          "value": {
+            "fully_qualify_all_names": false,
+            "jdbc_url": "jdbc:awsathena://AwsRegion=us-east-1;Catalog=AwsDataCatalog;User=AKIAXEBSSW3BZJTXKXDY;Password=0fBJyfQ0HOXwMDjnC65et8Cni6ptccIY9RE7wCOz;S3OutputLocation=s3://hasura-aws-immersion-day/output/",
+            "schema": "hasura_aws_immersion_day"
           }
         }
       },
@@ -607,6 +645,21 @@
                   }
                 },
                 "name": "accounts"
+              },
+              {
+                "definition": {
+                  "to_source": {
+                    "field_mapping": {
+                      "username": "username"
+                    },
+                    "relationship_type": "object",
+                    "source": "credit_history",
+                    "table": [
+                      "credit_history"
+                    ]
+                  }
+                },
+                "name": "credit_history"
               }
             ]
           }
