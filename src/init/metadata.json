@@ -1,5 +1,5 @@
 {
-  "resource_version": 532,
+  "resource_version": 542,
   "metadata": {
     "version": 3,
     "sources": [
@@ -159,7 +159,7 @@
                 "definition": {
                   "to_source": {
                     "field_mapping": {
-                      "username": "username"
+                      "national_id": "national_id"
                     },
                     "relationship_type": "object",
                     "source": "users",
@@ -650,7 +650,7 @@
                 "definition": {
                   "to_source": {
                     "field_mapping": {
-                      "username": "username"
+                      "national_id": "national_id"
                     },
                     "relationship_type": "object",
                     "source": "credit_history",

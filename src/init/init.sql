@@ -1,5 +1,6 @@
 DROP DATABASE IF EXISTS accounts WITH (FORCE);
 DROP DATABASE IF EXISTS crypto WITH (FORCE);
+DROP DATABASE IF EXISTS historical_prices WITH (FORCE);
 DROP DATABASE IF EXISTS investments WITH (FORCE);
 DROP DATABASE IF EXISTS trades WITH (FORCE);
 DROP DATABASE IF EXISTS transactions WITH (FORCE);
@@ -7,6 +8,7 @@ DROP DATABASE IF EXISTS users WITH (FORCE);
 
 CREATE DATABASE accounts;
 CREATE DATABASE crypto;
+CREATE DATABASE historical_prices;
 CREATE DATABASE investments;
 CREATE DATABASE trades;
 CREATE DATABASE transactions;
@@ -58,7 +60,7 @@ EXECUTE PROCEDURE update_timestamp();
 
 CREATE TABLE account_users (
     account_id INTEGER REFERENCES accounts(account_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    user_id UUID NOT NULL,
+    user_id UUID,
     PRIMARY KEY (account_id, user_id)
 );
 
@@ -113,7 +115,7 @@ CREATE TABLE crypto (
     crypto_id INTEGER PRIMARY KEY DEFAULT nextval('crypto_id_seq'::regclass),
     wallet_id INTEGER REFERENCES wallets(wallet_id) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
     name CHARACTER VARYING(64) NOT NULL,
-    symbol CHARACTER VARYING(5) NOT NULL,
+    symbol CHARACTER VARYING(7) NOT NULL,
     quantity NUMERIC(14, 4) NOT NULL,
     price NUMERIC(12, 2) NOT NULL,
     cost_basis NUMERIC(12, 2) NOT NULL,
@@ -128,6 +130,61 @@ CREATE TRIGGER update_total
 BEFORE INSERT OR UPDATE ON crypto
 FOR EACH ROW
 EXECUTE PROCEDURE update_total();
+
+
+\c historical_prices
+
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = TG_TABLE_NAME
+        AND column_name = 'updated'
+    ) THEN
+        NEW.updated = now();
+    ELSE
+        NEW.date = now();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TYPE type AS ENUM (
+    'Bond',
+    'Crypto',
+    'ETF',
+    'Mutual Fund',
+    'Stock'
+);
+CREATE SEQUENCE security_id_seq RESTART WITH 1 INCREMENT BY 1;
+CREATE TABLE securities (
+    security_id INTEGER PRIMARY KEY DEFAULT nextval('security_id_seq'::regclass),
+    type type NOT NULL,
+    symbol CHARACTER VARYING(7) NOT NULL,
+    created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+    updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
+);
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE ON securities
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE TABLE prices (
+    security_id INTEGER REFERENCES securities(security_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    date TIMESTAMP WITHOUT TIME ZONE,
+    price NUMERIC(12, 2) NOT NULL,
+    ask NUMERIC(12, 2) NOT NULL,
+    bid NUMERIC(12, 2) NOT NULL,
+    volume NUMERIC(15, 8) NOT NULL,
+    size NUMERIC(9, 8),
+    PRIMARY KEY (security_id, date)
+);
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE ON prices
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
 
 
 \c investments
@@ -253,7 +310,7 @@ CREATE TABLE assets (
     asset_id INTEGER PRIMARY KEY DEFAULT nextval('asset_id_seq'::regclass),
     type asset_type NOT NULL,
     name CHARACTER VARYING(128) NOT NULL,
-    symbol CHARACTER VARYING(5),
+    symbol CHARACTER VARYING(7),
     cusip CHARACTER VARYING(9),
     CONSTRAINT cusip_not_null CHECK (type != 'Bond' OR cusip IS NOT NULL),
     CONSTRAINT symbol_not_null CHECK (type = 'Bond' OR symbol IS NOT NULL) 
