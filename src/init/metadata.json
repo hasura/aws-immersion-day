@@ -1,5 +1,5 @@
 {
-  "resource_version": 542,
+  "resource_version": 547,
   "metadata": {
     "version": 3,
     "sources": [
@@ -261,6 +261,55 @@
           "connection_info": {
             "database_url": {
               "from_env": "PG_DATABASE_CRYPTO"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "historical_prices",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "prices",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "security",
+                "using": {
+                  "foreign_key_constraint_on": "security_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "securities",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "prices",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "security_id",
+                    "table": {
+                      "name": "prices",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_HISTORICAL_PRICES"
             },
             "isolation_level": "read-committed",
             "use_prepared_statements": false
