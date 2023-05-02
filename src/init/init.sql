@@ -225,6 +225,7 @@ CREATE SEQUENCE security_id_seq RESTART WITH 1 INCREMENT BY 1;
 CREATE TABLE securities (
     security_id INTEGER PRIMARY KEY DEFAULT nextval('security_id_seq'::regclass),
     type type NOT NULL,
+    name CHARACTER VARYING(64) NOT NULL,
     symbol CHARACTER VARYING(7) NOT NULL,
     created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
     updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
@@ -245,7 +246,7 @@ CREATE TABLE historical_prices (
     PRIMARY KEY (security_id, date)
 );
 CREATE TRIGGER update_timestamp
-BEFORE UPDATE ON historical_price
+BEFORE UPDATE ON historical_prices
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
 
