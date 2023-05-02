@@ -1,5 +1,5 @@
 {
-  "resource_version": 547,
+  "resource_version": 555,
   "metadata": {
     "version": 3,
     "sources": [
@@ -268,55 +268,6 @@
         }
       },
       {
-        "name": "historical_prices",
-        "kind": "postgres",
-        "tables": [
-          {
-            "table": {
-              "name": "prices",
-              "schema": "public"
-            },
-            "object_relationships": [
-              {
-                "name": "security",
-                "using": {
-                  "foreign_key_constraint_on": "security_id"
-                }
-              }
-            ]
-          },
-          {
-            "table": {
-              "name": "securities",
-              "schema": "public"
-            },
-            "array_relationships": [
-              {
-                "name": "prices",
-                "using": {
-                  "foreign_key_constraint_on": {
-                    "column": "security_id",
-                    "table": {
-                      "name": "prices",
-                      "schema": "public"
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        ],
-        "configuration": {
-          "connection_info": {
-            "database_url": {
-              "from_env": "PG_DATABASE_HISTORICAL_PRICES"
-            },
-            "isolation_level": "read-committed",
-            "use_prepared_statements": false
-          }
-        }
-      },
-      {
         "name": "investments",
         "kind": "postgres",
         "tables": [
@@ -393,6 +344,55 @@
           "connection_info": {
             "database_url": {
               "from_env": "PG_DATABASE_INVESTMENTS"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
+          }
+        }
+      },
+      {
+        "name": "securities",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "historical_prices",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "security",
+                "using": {
+                  "foreign_key_constraint_on": "security_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "securities",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "historical_prices",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "security_id",
+                    "table": {
+                      "name": "historical_prices",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_SECURITIES"
             },
             "isolation_level": "read-committed",
             "use_prepared_statements": false
