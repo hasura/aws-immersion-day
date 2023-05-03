@@ -351,55 +351,6 @@
         }
       },
       {
-        "name": "securities",
-        "kind": "postgres",
-        "tables": [
-          {
-            "table": {
-              "name": "historical_prices",
-              "schema": "public"
-            },
-            "object_relationships": [
-              {
-                "name": "security",
-                "using": {
-                  "foreign_key_constraint_on": "security_id"
-                }
-              }
-            ]
-          },
-          {
-            "table": {
-              "name": "securities",
-              "schema": "public"
-            },
-            "array_relationships": [
-              {
-                "name": "historical_prices",
-                "using": {
-                  "foreign_key_constraint_on": {
-                    "column": "security_id",
-                    "table": {
-                      "name": "historical_prices",
-                      "schema": "public"
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        ],
-        "configuration": {
-          "connection_info": {
-            "database_url": {
-              "from_env": "PG_DATABASE_SECURITIES"
-            },
-            "isolation_level": "read-committed",
-            "use_prepared_statements": false
-          }
-        }
-      },
-      {
         "name": "trades",
         "kind": "postgres",
         "tables": [
