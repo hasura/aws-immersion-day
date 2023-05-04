@@ -8,7 +8,7 @@ You need to provision two key parts of the infrastructure. An AWS ecosystem of f
 
 To set up your AWS accounts, you need to go to the following link.
 
-https://dashboard.eventengine.run/login?hash=cba7-1e6c027654-d0
+https://dashboard.eventengine.run/login?hash=fa3e-13c11cb034-aa
 
 ![The rough architectural diagram of what we are building today.](/guide/assets/aws-arch.png)
 
@@ -23,11 +23,7 @@ https://dashboard.eventengine.run/login?hash=cba7-1e6c027654-d0
 
 ## Set up Hasura Cloud
 
-Signup at https://cloud.hasura.io
-
-### Copying Stack outputs to env vars
-
-![Env vars to copy.](/guide/assets/env-vars.png)
+This step should already be done, if not, you can [follow the step-by-step guide here.](../step-by-step/Readme.md)
 
 Also, add the EVENT_TRIGGER_URL: https://echo-server.hasura.app/api/rest/postify
 
@@ -35,9 +31,8 @@ Also, add the EVENT_TRIGGER_URL: https://echo-server.hasura.app/api/rest/postify
 
 ## House Keeping:
 
-1. Seed Cognito users
-2. Lock down RDS
-3. Add environment variables to lambdas
+1. Lock down RDS
+2. Add ENV vars to AWS Secrets
 
 ---
 
@@ -101,15 +96,6 @@ sequenceDiagram
     Hasura-->>Client: Returns authenticated user with JWT Payload
 
 ```
-
-### ENV Secrets
-
-AWS_LAMBDA_HOST
-RDS_DB_1
-RDS_DB_2
-HASURA_GRAPHQL_UNAUTHORIZED_ROLE
-HASURA_GRAPHQL_JWT_SECRET
-EVENT_TRIGGER_BASE: https://echo-server.hasura.app/api/rest/postify
 
 ### Dashboard run through
 

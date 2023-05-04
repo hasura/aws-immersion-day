@@ -2,6 +2,8 @@
 
 Actions are exposed as root level queries or mutations in the GraphQL API. Events are triggers that execute under conditional changes for inserts and updates.
 
+Skip if you imported metadata.
+
 ## Adding Actions
 
 Create a series of action called Signup and we'll use this URL

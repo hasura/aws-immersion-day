@@ -1,6 +1,6 @@
 # Look at the data sources
 
-![Here's our primary erd chart.](/guide/assets/er-diagram.png)
+![Here's our primary erd chart.](/guide/assets/er_diagram.png)
 
 ## Database 1
 
@@ -61,25 +61,9 @@ sequenceDiagram
 
 ---
 
-## Database 2
-
-Our credit report data from the big three.
-
-## Database 3
-
-Our Crypto DB.
-
-## Database 4
-
-Static file processing with Athena statements.
-
-Steps:
-
-1. Namespace the statements field
-
 ## Connecting the data sources
 
-Use the environment variables
+Import metadata
 
 ## Adding feautures
 
