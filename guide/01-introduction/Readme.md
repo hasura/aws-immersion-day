@@ -12,22 +12,49 @@ Don't worry, when all the joins and permissions are in place, we'll be able to a
 
 ## So what are we building?
 
-Our data ecosystem for our bank is as follows.
+Our data ecosystem for our bank mergers looks like the following.
 
 ```mermaid
 graph LR
-    A[(Transactional Data)] o-.-o B[(Monthly Bank Statements)]
-    A o-.-o C[(Credit History)]
-    A o-.-o D{{Remote Schema CMS}}
-    E[/Login Action/]
-    F[/Signup Action/]
-    G[/Verify Action/]
-    A -.-> H[/Create User Event Trigger/]
-    A -.-> I[/Approve Credit Card Event Trigger/]
+    C[(Credit History)]
+    W[(Wallets)]
+    T[(Transactions)]
+    I[(Investments)]
+    A[(Accounts)]
+    U[(Users)]
+    TR[(Trades)]
+    CA[(Credit Card Application)]
+
+    RC{{Remote Schema CMS}}
+
+    ASW{{Swagger}}
+
+    AL[/Login Action/]
+    AS[/Signup Action/]
+    AG[/Verify Action/]
+
+    EC[/Credit Card Order Event/]
+    EAC[/Credit Card Approved Event/]
+
+    U o-.-o A
+    U o-.-o CA
+    A o-.-o C
+    A o-.-o W
+    A o-.-o T
+    A o-.-o I
+    TR o-.-o I
+
+    ASW o-.-o AL
+    ASW o-.-o AS
+    ASW o-.-o AG
+
+    CA -.-> EC
+    CA -.-> EAC
+
 ```
 
 1. We start with conecting our existing data
-2. We custom business logic for signup, login, and verify auth functions
+2. We add custom business logic handlers for signup, login, and verify auth functions
 3. We enable data flows with event triggers
 4. We bring in CMS data from a remote schema
 

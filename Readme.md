@@ -1,6 +1,6 @@
 # Mobile Banking Application
 
-## This workshoip features the following high-level utilities of the Hasura platform
+## This workshop features the following high-level utilities of the Hasura platform
 
 1. Data federation with DB to DB Joins and Remote Schema Joins
 2. Custom business logic with Actions
