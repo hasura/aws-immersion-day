@@ -4,7 +4,7 @@ info:
   title: AWS Cognito REST API
   description: |-
     A REST API wrapper for AWS Cognito. It enables user sign up, 
-    confirmation, log in and log out.
+    confirmation, log in, and log out.
   version: 1.0.0
 
 servers:
