@@ -1,5 +1,5 @@
 {
-  "resource_version": 555,
+  "resource_version": 605,
   "metadata": {
     "version": 3,
     "sources": [
@@ -148,11 +148,26 @@
       },
       {
         "name": "credit_history",
-        "kind": "athena",
+        "kind": "postgres",
         "tables": [
           {
-            "table": [
-              "credit_history"
+            "table": {
+              "name": "credit_history",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "scores",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "national_id",
+                    "table": {
+                      "name": "scores",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
             ],
             "remote_relationships": [
               {
@@ -172,15 +187,29 @@
                 "name": "user"
               }
             ]
+          },
+          {
+            "table": {
+              "name": "scores",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "credit_history",
+                "using": {
+                  "foreign_key_constraint_on": "national_id"
+                }
+              }
+            ]
           }
         ],
         "configuration": {
-          "template": null,
-          "timeout": null,
-          "value": {
-            "fully_qualify_all_names": false,
-            "jdbc_url": "jdbc:awsathena://AwsRegion=us-east-1;Catalog=AwsDataCatalog;User=AKIAXEBSSW3BZJTXKXDY;Password=0fBJyfQ0HOXwMDjnC65et8Cni6ptccIY9RE7wCOz;S3OutputLocation=s3://hasura-aws-immersion-day/output/",
-            "schema": "hasura_aws_immersion_day"
+          "connection_info": {
+            "database_url": {
+              "from_env": "PG_DATABASE_CREDIT_HISTORY"
+            },
+            "isolation_level": "read-committed",
+            "use_prepared_statements": false
           }
         }
       },
@@ -654,9 +683,10 @@
                     },
                     "relationship_type": "object",
                     "source": "credit_history",
-                    "table": [
-                      "credit_history"
-                    ]
+                    "table": {
+                      "name": "credit_history",
+                      "schema": "public"
+                    }
                   }
                 },
                 "name": "credit_history"
