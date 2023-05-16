@@ -1,17 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Hasura AWS Immersion Day Template
 
-Parameters:
-  dbPassword:
-    Type: String
-    Default: pgpassword
-  dbUsername:
-    Type: String
-    Default: postgres
-  prefixName:
-    Type: String
-    Default: hasura-aws-immersion-day
-
 Mappings:
   ParamSecretExtensionMap:
     us-east-1:
@@ -52,7 +41,7 @@ Resources:
       CidrBlock: 10.0.0.0/16
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, vpc]]
+          Value: hasura-aws-immersion-day-vpc
     Type: AWS::EC2::VPC
   
   publicSubnetOne:
@@ -62,7 +51,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, public-subnet-1]]
+          Value: hasura-aws-immersion-day-public-subnet-1
       VpcId: !Ref vpc
     Type: AWS::EC2::Subnet
   
@@ -73,7 +62,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, public-subnet-2]]
+          Value: hasura-aws-immersion-day-public-subnet-2
       VpcId: !Ref vpc
     Type: AWS::EC2::Subnet
   
@@ -81,7 +70,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, igw]]
+          Value: hasura-aws-immersion-day-igw
     Type: AWS::EC2::InternetGateway
   
   internetGatewayAttachment:
@@ -103,7 +92,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, public-rtb]]
+          Value: hasura-aws-immersion-day-public-rtb
       VpcId: !Ref vpc
     Type: AWS::EC2::RouteTable
   
@@ -129,7 +118,7 @@ Resources:
           ToPort: 80
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, lambda-sg]]
+          Value: hasura-aws-immersion-day-lambda-sg
       VpcId: !Ref vpc
     Type: AWS::EC2::SecurityGroup
   
@@ -143,7 +132,7 @@ Resources:
           ToPort: 5432
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref prefixName, postgres-sg]]
+          Value: hasura-aws-immersion-day-postgres-sg
       VpcId: !Ref vpc
     Type:  AWS::EC2::SecurityGroup
   
@@ -154,7 +143,7 @@ Resources:
       - defaultRoute
     Properties:
       IpAddressType: ipv4
-      Name: !Join ["-", [!Ref prefixName, alb]]
+      Name: hasura-aws-immersion-day-alb
       Scheme: internet-facing
       SecurityGroups: 
         - !Ref albSecurityGroup
@@ -375,7 +364,7 @@ Resources:
   ## ECS ##
   ecsCluster:
     Properties:
-      ClusterName: !Join ["-", [!Ref prefixName, ecs-cluster]]
+      ClusterName: hasura-aws-immersion-day-ecs-cluster
     Type:  AWS::ECS::Cluster
   
   ecsTaskExecutionRole:
@@ -391,7 +380,7 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      RoleName: !Join ["-", [!Ref prefixName, ecs-task-execution-role]]
+      RoleName: hasura-aws-immersion-day-ecs-task-execution-role
     Type: AWS::IAM::Role
   
   
@@ -686,7 +675,7 @@ Resources:
                 Effect: Allow
                 Resource: !Ref hasuraSecrets
           PolicyName: secrets-manager-read-only-access
-      RoleName: !Join ["-", [!Ref prefixName, lambda-execution-role]]
+      RoleName: hasura-aws-immersion-day-lambda-execution-role
     Type: AWS::IAM::Role
   
   
@@ -694,7 +683,7 @@ Resources:
   dbSubnetGroup:
     Properties:
       DBSubnetGroupDescription: Publicly accessible subnets
-      DBSubnetGroupName: !Join ["-", [!Ref prefixName, subnet-group]]
+      DBSubnetGroupName: hasura-aws-immersion-day-subnet-group
       SubnetIds:
         - !Ref publicSubnetOne
         - !Ref publicSubnetTwo
@@ -708,7 +697,7 @@ Resources:
       AllocatedStorage: "20"
       BackupRetentionPeriod: 0
       DBInstanceClass: db.t3.micro
-      DBInstanceIdentifier: !Join ["-", [!Ref prefixName, rds-postgres]]
+      DBInstanceIdentifier: hasura-aws-immersion-day-rds-postgres
       DBSubnetGroupName: !Ref dbSubnetGroup
       DeleteAutomatedBackups: true
       Engine: postgres
