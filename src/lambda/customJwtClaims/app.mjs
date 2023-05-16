@@ -5,7 +5,8 @@ export const lambdaHandler = async function(event) {
                 "https://hasura.io/jwt/claims": JSON.stringify({
                     "X-Hasura-Allowed-Roles": ["user"],
                     "X-Hasura-Default-Role": "user",
-                    "X-Hasura-User-Id": event.request.userAttributes.sub /* use "event.userName" for username */
+                    "X-Hasura-User-Id": event.request.userAttributes.sub
+                    /* use "event.userName" for username */
                 }),
             },
         },
