@@ -1,23 +1,29 @@
-import https from "https";
 import url from "url";
 import { createUser, setPassword } from "./auth.mjs";
+import { httpGetRequest, httpPostRequest } from "./request.mjs";
 
-const getUsers = async function(url) {
-    return new Promise(function(resolve, reject) {
-        https.get(url, function(res) {
-            let data = "";
-            res.on("data", function(chunk) {
-                data += chunk;
-            });
-            
-            res.on("end", function() {
-                resolve(JSON.parse(data).users);
-            });
-        }).on("error", function(error) {
+const getUsers = async function() {
+    const parsedUrl = url.parse(process.env.USERS_LIST);
+    const options = {
+        hostname: parsedUrl.hostname,
+        method: "GET",
+        path: parsedUrl.path,
+        port: 443,
+        secure: true
+    };
+    
+    const response = await httpGetRequest(options);
+
+    if (response.code === 200) {
+        try {
+            return response.data.users;
+        } catch (error) {
             console.log(error);
-            reject();
-        }).end();
-    });
+            return;
+        }
+    } else {
+        return;
+    }
 };
 
 const sendResponse = async function(event, context, status, data) {
@@ -31,7 +37,10 @@ const sendResponse = async function(event, context, status, data) {
         Status: status
     });
     
+    console.log("Event:\n", event);
+    console.log("Context:\n", context);
     console.log("Response Body:\n", body);
+    
     const parsedUrl = url.parse(event.ResponseURL);
     const options = {
         hostname: parsedUrl.hostname,
@@ -41,36 +50,15 @@ const sendResponse = async function(event, context, status, data) {
         },
         method: "PUT",
         path: parsedUrl.path,
-        port: 443
+        port: 443,
+        secure: true
     };
     
-    console.log(`Sending Response...\n`);
+    const response = await httpPostRequest(options, body);
     
-    return new Promise(function(resolve, reject) {
-        const req = https.request(options, function(res) {
-            let data = "";
-            
-            console.log(`Status: ${res.statusCode}`);
-            console.log(`Headers: ${JSON.stringify(res.headers)}`);
-            
-            res.on("data", function(chunk) {
-                data += chunk;
-            });
-            
-            res.on("end", function() {
-                console.log(`Body: ${JSON.stringify(data)}`);
-                resolve();
-                context.done();
-            });
-        }).on("error", function(error) {
-            console.log(`Error: ${error}`);
-            reject();
-            context.done();
-        });
-        
-        req.write(body);
-        req.end();
-    });
+    console.log(`Status: ${response.code}`);
+    console.log(`Body: ${response.data}`);
+    context.done();
 };
 
 export const lambdaHandler = async function(event, context) {
@@ -81,19 +69,20 @@ export const lambdaHandler = async function(event, context) {
         return;
     }
     
-    await getUsers(process.env.USERS_LIST).then(async function(users) {
+    const users = await getUsers();
+    
+    if (users) {
         for (const user of users) {
-            await createUser(user).then(function(res) {
-                if (res.status === 201) {
-                    status = "SUCCESS";
-                    uuid[user.username] = res.uuid;
-                    setPassword(user);
-                } else {
-                    status = "FAILED";
-                }
-            });
+            const response = await createUser(user);
+            if (response.status === 201) {
+                status = "SUCCESS";
+                uuid[user.username] = response.uuid;
+                setPassword(user);
+            } else {
+                status = "FAILED";
+            }
         }
-    });
+    }
     
     await sendResponse(event, context, status, { Users: `${JSON.stringify(uuid)}` });
     return;

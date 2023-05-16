@@ -11,6 +11,7 @@
   "license": "ISC",
   "devDependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.303.0",
+    "http": "^0.0.1-security",
     "https": "^1.0.0",
     "url": "^0.11.0"
   },
