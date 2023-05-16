@@ -1,4 +1,5 @@
 DROP DATABASE IF EXISTS accounts WITH (FORCE);
+DROP DATABASE IF EXISTS credit_history WITH (FORCE);
 DROP DATABASE IF EXISTS crypto WITH (FORCE);
 DROP DATABASE IF EXISTS investments WITH (FORCE);
 DROP DATABASE IF EXISTS securities WITH (FORCE);
@@ -8,6 +9,7 @@ DROP DATABASE IF EXISTS users WITH (FORCE);
 
 CREATE DATABASE accounts;
 CREATE DATABASE crypto;
+CREATE DATABASE credit_history;
 CREATE DATABASE investments;
 CREATE DATABASE securities;
 CREATE DATABASE trades;
@@ -75,6 +77,46 @@ CREATE TABLE history (
 );
 CREATE TRIGGER update_timestamp
 BEFORE UPDATE ON history
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+
+\c credit_history
+
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE credit_history (
+    national_id CHARACTER VARYING(32) PRIMARY KEY,
+    created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+    updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
+);
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE ON credit_history
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE SEQUENCE score_id_seq RESTART WITH 1 INCREMENT BY 1;
+CREATE TYPE credit_bureau AS ENUM (
+    'Equifax',
+    'Experian',
+    'TransUnion'
+);
+CREATE TABLE scores (
+    score_id INTEGER PRIMARY KEY DEFAULT nextval('score_id_seq'::regclass) NOT NULL,
+    national_id CHARACTER VARYING(32) REFERENCES credit_history(national_id) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
+    credit_bureau credit_bureau NOT NULL,
+    score INTEGER NOT NULL,
+    created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+    updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
+);
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE ON scores
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
 
@@ -200,16 +242,7 @@ EXECUTE PROCEDURE update_total();
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = TG_TABLE_NAME
-        AND column_name = 'updated'
-    ) THEN
-        NEW.updated = now();
-    ELSE
-        NEW.date = now();
-    END IF;
+    NEW.updated = now();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -223,10 +256,9 @@ CREATE TYPE type AS ENUM (
 );
 CREATE SEQUENCE security_id_seq RESTART WITH 1 INCREMENT BY 1;
 CREATE TABLE securities (
-    security_id INTEGER PRIMARY KEY DEFAULT nextval('security_id_seq'::regclass),
+    symbol CHARACTER VARYING(7) PRIMARY KEY,
+    security_id INTEGER UNIQUE DEFAULT nextval('security_id_seq'::regclass) NOT NULL,
     type type NOT NULL,
-    name CHARACTER VARYING(64) NOT NULL,
-    symbol CHARACTER VARYING(7) NOT NULL,
     created TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
     updated TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL
 );
@@ -235,20 +267,17 @@ BEFORE UPDATE ON securities
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
 
+CREATE SEQUENCE price_id_seq RESTART WITH 1 INCREMENT BY 1;
 CREATE TABLE historical_prices (
     security_id INTEGER REFERENCES securities(security_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    date TIMESTAMP WITHOUT TIME ZONE,
+    date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     price NUMERIC(12, 2) NOT NULL,
     ask NUMERIC(12, 2) NOT NULL,
     bid NUMERIC(12, 2) NOT NULL,
     volume NUMERIC(15, 8) NOT NULL,
-    size NUMERIC(9, 8),
-    PRIMARY KEY (security_id, date)
+    size NUMERIC(9, 8) NOT NULL,
+    PRIMARY KEY (security_id, price)
 );
-CREATE TRIGGER update_timestamp
-BEFORE UPDATE ON historical_prices
-FOR EACH ROW
-EXECUTE PROCEDURE update_timestamp();
 
 
 \c trades
@@ -593,6 +622,38 @@ INSERT INTO history (history_id, account_id, description, begin_balance, end_bal
   ('1023', '993804711', 'Stock Sale', '171.40', '7595.40', '2023-02-21 13:21:0.768'),
   ('1024', '993804711', 'Stock Purchase', '7595.40', '337.00', '2023-03-10 14:01:0.016'),
   ('1025', '126941757', 'Stock Purchase', '510.25', '11.05', '2023-03-17 11:42:0.250');
+
+\c credit_history
+
+INSERT INTO credit_history (national_id, created, updated) VALUES
+  ('453-98-7261', '2023-01-02 10:05:0.128', '2023-01-02 10:05:0.128'),
+  ('862-23-0179', '2023-01-02 10:12:0.256', '2023-01-02 10:12:0.256');
+
+INSERT INTO scores (national_id, credit_bureau, score, created, updated) VALUES
+  ('453-98-7261', 'Equifax', '560', '2023-02-01 01:00:0.128', '2023-02-01 01:00:0.128'),
+  ('453-98-7261', 'Experian', '580', '2023-02-01 01:00:0.256', '2023-02-01 01:00:0.256'),
+  ('453-98-7261', 'TransUnion', '570', '2023-02-01 01:00:0.384', '2023-02-01 01:00:0.384'),
+  ('862-23-0179', 'Equifax', '760', '2023-02-01 01:00:0.512', '2023-02-01 01:00:0.512'),
+  ('862-23-0179', 'Experian', '780', '2023-02-01 01:00:0.640', '2023-02-01 01:00:0.640'),
+  ('862-23-0179', 'TransUnion', '790', '2023-02-01 01:00:0.768', '2023-02-01 01:00:0.768'),
+  ('453-98-7261', 'Equifax', '555', '2023-03-01 01:00:0.128', '2023-03-01 01:00:0.128'),
+  ('453-98-7261', 'Experian', '575', '2023-03-01 01:00:0.256', '2023-03-01 01:00:0.256'),
+  ('453-98-7261', 'TransUnion', '565', '2023-03-01 01:00:0.384', '2023-03-01 01:00:0.384'),
+  ('862-23-0179', 'Equifax', '765', '2023-03-01 01:00:0.512', '2023-03-01 01:00:0.512'),
+  ('862-23-0179', 'Experian', '785', '2023-03-01 01:00:0.640', '2023-03-01 01:00:0.640'),
+  ('862-23-0179', 'TransUnion', '795', '2023-03-01 01:00:0.768', '2023-03-01 01:00:0.768'),
+  ('453-98-7261', 'Equifax', '550', '2023-04-01 01:00:0.128', '2023-04-01 01:00:0.128'),
+  ('453-98-7261', 'Experian', '570', '2023-04-01 01:00:0.256', '2023-04-01 01:00:0.256'),
+  ('453-98-7261', 'TransUnion', '560', '2023-04-01 01:00:0.384', '2023-04-01 01:00:0.384'),
+  ('862-23-0179', 'Equifax', '770', '2023-04-01 01:00:0.512', '2023-04-01 01:00:0.512'),
+  ('862-23-0179', 'Experian', '790', '2023-04-01 01:00:0.640', '2023-04-01 01:00:0.640'),
+  ('862-23-0179', 'TransUnion', '795', '2023-04-01 01:00:0.768', '2023-04-01 01:00:0.768'),
+  ('453-98-7261', 'Equifax', '560', '2023-05-01 01:00:0.128', '2023-05-01 01:00:0.128'),
+  ('453-98-7261', 'Experian', '575', '2023-05-01 01:00:0.256', '2023-05-01 01:00:0.256'),
+  ('453-98-7261', 'TransUnion', '565', '2023-05-01 01:00:0.384', '2023-05-01 01:00:0.384'),
+  ('862-23-0179', 'Equifax', '780', '2023-05-01 01:00:0.512', '2023-05-01 01:00:0.512'),
+  ('862-23-0179', 'Experian', '785', '2023-05-01 01:00:0.640', '2023-05-01 01:00:0.640'),
+  ('862-23-0179', 'TransUnion', '805', '2023-05-01 01:00:0.768', '2023-05-01 01:00:0.768');
 
 \c crypto
 
